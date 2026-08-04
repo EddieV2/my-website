@@ -26,6 +26,9 @@ demo: the infrastructure serving it is defined in this repo.
   5 min; an hourly publisher Lambda computes SLO status + error budget and writes
   `status.json` (never touched by deploys). SLOs: 99.9%/30d availability,
   p75 LCP < 1.5s. All in `terraform/observability.tf` + `terraform/lambda/`.
+- Word version (for Workday and other ATS that parse `.docx` more reliably):
+  strip the on-screen `[FILL IN]` spans, then
+  `pandoc /tmp/resume-clean.html -f html -t docx -o Edward-Vartanessian-Resume.docx`
 - `resume.pdf` is generated from `private/resume-print.html`:
   `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless \
    --no-pdf-header-footer --print-to-pdf=resume.pdf private/resume-print.html`

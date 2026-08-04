@@ -11,3 +11,6 @@ terraform/*.tfvars
 
 # OS noise
 .DS_Store
+
+# Generated Word resume (regenerate with pandoc; see README)
+*.docx
