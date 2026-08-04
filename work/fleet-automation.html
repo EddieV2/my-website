@@ -162,6 +162,14 @@
           hours. We rebuilt it event-driven: an SLO breach or an emergency policy push (think P0/P1
           incident response) triggers Python remediation services directly against the
           configuration layer, so convergence starts on the event instead of on the next check-in.</p>
+        <p data-reveal>That got enforcement under 15 minutes, and 15 minutes was not an accident —
+          it was the management platform&rsquo;s check-in interval, the floor the architecture
+          imposed. Security wanted three. Closing that gap meant getting off the check-in cycle
+          entirely, so I started moving detection onto the endpoint itself with local polling
+          daemons that could act without waiting to be asked. That work was still in flight when
+          the acquisition redirected the roadmap, but the shape of the answer was clear: if your
+          latency target is shorter than your control plane&rsquo;s heartbeat, the agent has to
+          decide locally.</p>
         <p data-reveal>The fleet was global; the rollouts deliberately weren&rsquo;t. A new OS
           update went first to an opt-in beta group for UAT; once they signed off, the forced
           rollout moved in <strong>waves targeted by IP range</strong> — addresses are allocated
@@ -192,15 +200,27 @@
         <h2 data-reveal>Trust is the actual constraint.</h2>
         <p data-reveal>The technical problems here are the easy half. The hard half is that every
           node in this distributed system belongs to a person who can disable your agent, defer your
-          patch, and file a ticket about you — and who is right to be annoyed if their machine
-          reboots during a customer demo. Automation that fights its users loses, no matter how
+          patch, and file a ticket about you. Automation that fights its users loses, no matter how
           correct the control loop is.</p>
-        <p data-reveal>That constraint drove the design more than any performance requirement did.
-          It is why enforcement went canary-first rather than fleet-wide, why alerting had to key on
-          SLO burn instead of every transient signal (a fleet this size generates enough noise to
-          train people to ignore alerts entirely), and why &ldquo;zero downtime&rdquo; was treated
-          as a hard requirement rather than a goal. Reliability work on endpoints is as much about
-          earning permission as it is about writing the automation.</p>
+        <p data-reveal>I inherited the proof. Patching ran on a legacy Perl script that asked people
+          to quit their applications and, failing that, quit the applications for them — including
+          while they were presenting on a video call. It technically worked. It also guaranteed that
+          every patch cycle produced a fresh round of angry tickets, and the political cost of that
+          made the whole compliance program harder to run.</p>
+        <p data-reveal>The replacement was a Python patching service that inverted the model: stage
+          the update in the background, then apply it the next time the user relaunches the
+          application. Nothing is interrupted, because nothing has to be. On top of that it checks
+          whether someone is in a meeting and simply waits if they are. The engineering
+          isn&rsquo;t exotic — background staging, apply-on-relaunch, typed error handling around
+          every failure path — but the result was that patch compliance went to effectively
+          everything that could be updated, and the recurring audit findings for stale software
+          stopped.</p>
+        <p data-reveal>The same principle covered the always-on security agents. They had to be
+          running at all times, so a machine whose agent had died was both a compliance gap and a
+          support ticket waiting to happen. Rather than chase those by hand, I made the two
+          management planes able to repair each other: if one agent went down, the other could
+          reinstall it, and vice versa. A dead agent became a self-correcting event instead of an
+          escalation.</p>
 
         <p class="eyebrow">outcomes</p>
         <h2 data-reveal>The fleet got boring. That was the point.</h2>
