@@ -1,0 +1,13 @@
+# Job-search working docs — never publish these
+private/
+
+# Terraform
+terraform/.build/
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl
+terraform/*.tfvars
+
+# OS noise
+.DS_Store

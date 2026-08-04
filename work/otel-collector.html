@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A custom OpenTelemetry Collector, fleet-wide — Edward Vartanessian</title>
+  <meta name="description" content="Building a minimal OpenTelemetry Collector distribution, shipping it to 10,000+ devices, and driving macOS host-metrics support upstream (proposal #33393).">
+  <link rel="canonical" href="https://evartanessian.dev/work/otel-collector.html">
+  <meta property="og:title" content="A custom OpenTelemetry Collector for 10,000 laptops">
+  <meta property="og:description" content="A minimal Collector distribution shipped fleet-wide — and the macOS host-metrics gap driven upstream (proposal #33393).">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://evartanessian.dev/work/otel-collector.html">
+  <meta property="og:image" content="https://evartanessian.dev/assets/og/otel-collector.png">
+  <meta name="theme-color" content="#05060a">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+  <script src="../theme-init.js"></script>
+  <link rel="stylesheet" href="../styles.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "A custom OpenTelemetry Collector for 10,000 laptops",
+    "author": { "@type": "Person", "name": "Edward Vartanessian", "url": "https://evartanessian.dev" },
+    "url": "https://evartanessian.dev/work/otel-collector.html"
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <nav class="nav" aria-label="Primary">
+      <a class="nav-name" href="../index.html">Edward Vartanessian</a>
+      <div class="nav-links">
+        <a href="../index.html#work">All work</a>
+        <a href="../resume.pdf" class="nav-hide-sm">Résumé</a>
+        <a href="../index.html#contact">Contact</a>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Switch to light theme" title="Toggle theme">
+          <svg class="icon-sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4 1.4-1.4"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main">
+    <div id="nav-sentinel" aria-hidden="true"></div>
+
+    <article>
+      <header class="cs-header container">
+        <nav aria-label="Breadcrumb"><a class="breadcrumb" href="../index.html#work">← Selected work</a></nav>
+        <p class="eyebrow">~/work/otel-collector</p>
+        <h1 class="cs-title">A custom OpenTelemetry Collector <span class="gradient-text">for 10,000 laptops.</span></h1>
+        <p class="lead">Why we built our own Collector distribution instead of shipping the
+          kitchen sink, how you safely update the thing that watches the fleet — and the hole I
+          found in the Collector on macOS that ended up fixed upstream.</p>
+        <p class="cs-meta">Client Platform Engineer (DevOps/SRE) · Splunk · OpenTelemetry, Go
+          tooling (ocb), GitLab CI, Puppet, Splunk</p>
+      </header>
+
+      <section class="stats" aria-label="Outcomes">
+        <div class="container">
+          <dl class="stats-grid">
+            <div class="stat" data-reveal>
+              <dd class="stat-value" data-count-to="10000" data-suffix="+">10,000+</dd>
+              <dt class="stat-label">endpoints running the distribution</dt>
+            </div>
+            <div class="stat" data-reveal style="--reveal-delay: 80ms">
+              <dd class="stat-value stat-badge">#33393</dd>
+              <dt class="stat-label">upstream proposal — macOS host metrics, since shipped</dt>
+            </div>
+            <div class="stat" data-reveal style="--reveal-delay: 160ms">
+              <dd class="stat-value">1</dd>
+              <dt class="stat-label">pipeline for health + compliance telemetry, vendor-neutral</dt>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <div class="container prose">
+        <p class="eyebrow">context</p>
+        <h2 data-reveal>The fleet&rsquo;s SLOs needed eyes.</h2>
+        <p data-reveal>The <a href="fleet-automation.html">fleet control loop</a> only works if the
+          telemetry underneath it is trustworthy. We needed host and compliance signals from every
+          laptop in the company, and the usual answer — a pile of vendor agents, each with its own
+          format, footprint, and bill — is how endpoint fleets end up running five overlapping
+          daemons. OpenTelemetry offered the alternative: one collector, one pipeline, open
+          schema, no lock-in on the backend.</p>
+
+        <p class="eyebrow">constraints</p>
+        <h2 data-reveal>The watcher must not hurt the watched.</h2>
+        <p data-reveal>A collector on a developer&rsquo;s laptop lives under a resource budget — if
+          the telemetry agent is the thing making the fans spin, you lose the room. macOS adds its
+          own tax: everything must be signed and notarized, or Gatekeeper ends the conversation.
+          And the hardest constraint is recursive: <strong>updating the agent that monitors the
+          fleet, across the fleet, without blinding yourself while you do it.</strong></p>
+
+        <p class="eyebrow">design</p>
+        <h2 data-reveal>A minimal distribution, built like software.</h2>
+        <p data-reveal>The OpenTelemetry Collector Builder (<code>ocb</code>) lets you compile a
+          collector containing exactly the components you need and nothing else. Ours carried the
+          host-metrics receiver, a small set of processors for batching and memory protection, and
+          the Splunk exporter — a deliberately boring manifest. The manifest lived in git; CI built,
+          signed, and packaged it; Puppet rolled it out cohort by cohort, watching the same SLIs
+          the collector itself reports. When the telemetry from a canary cohort stays healthy, the
+          wave continues.</p>
+
+        <figure class="diagram-wrap" data-reveal>
+          <svg class="diagram" viewBox="0 0 720 320" role="img" aria-labelledby="otel-diag-title otel-diag-desc">
+            <title id="otel-diag-title">Telemetry pipeline and ship path</title>
+            <desc id="otel-diag-desc">Top row: the telemetry pipeline from the host-metrics receiver through batch and memory-limiter processors to the Splunk exporter. Bottom row: the ship path from the ocb manifest through GitLab CI signing to packages rolled out to fleet cohorts by Puppet.</desc>
+            <g class="d-row">
+              <text x="70" y="28" class="d-sub">the pipeline</text>
+              <rect x="8" y="40" width="170" height="62" rx="10"/>
+              <text x="93" y="68" class="d-label">hostmetrics</text>
+              <text x="93" y="86" class="d-sub">receiver · CPU, disk, mem</text>
+
+              <rect x="248" y="40" width="180" height="62" rx="10"/>
+              <text x="338" y="68" class="d-label">processors</text>
+              <text x="338" y="86" class="d-sub">batch · memory_limiter</text>
+
+              <rect x="498" y="40" width="170" height="62" rx="10"/>
+              <text x="583" y="68" class="d-label">exporter</text>
+              <text x="583" y="86" class="d-sub">Splunk · OTLP</text>
+
+              <path class="d-edge" d="M178 71 H248"/>
+              <path class="d-edge" d="M428 71 H498"/>
+            </g>
+            <g class="d-row">
+              <text x="70" y="214" class="d-sub">the ship path</text>
+              <rect x="8" y="226" width="150" height="62" rx="10"/>
+              <text x="83" y="254" class="d-label">manifest.yaml</text>
+              <text x="83" y="272" class="d-sub">ocb · in git</text>
+
+              <rect x="218" y="226" width="170" height="62" rx="10"/>
+              <text x="303" y="254" class="d-label">GitLab CI</text>
+              <text x="303" y="272" class="d-sub">build · sign · package</text>
+
+              <rect x="448" y="226" width="220" height="62" rx="10"/>
+              <text x="558" y="254" class="d-label">fleet cohorts</text>
+              <text x="558" y="272" class="d-sub">Puppet · canary → wave</text>
+
+              <path class="d-edge" d="M158 257 H218"/>
+              <path class="d-edge" d="M388 257 H448"/>
+            </g>
+          </svg>
+          <figcaption class="visually-hidden">The collector&rsquo;s telemetry pipeline and its deployment path.</figcaption>
+        </figure>
+
+        <p class="eyebrow">the darwin gap</p>
+        <h2 data-reveal>The metrics that weren&rsquo;t there.</h2>
+        <p data-reveal>Rolling this out surfaced an uncomfortable fact: the Collector&rsquo;s
+          host-metrics receiver couldn&rsquo;t report CPU or disk metrics on macOS — the scrapers
+          needed CGO and simply weren&rsquo;t supported on Darwin. On a fleet that was heavily
+          macOS, that&rsquo;s not a footnote; it&rsquo;s a hole in the middle of the health model.</p>
+        <p data-reveal>The fork was the tempting answer — patch it privately, ship it, move on. But
+          a private fork of a telemetry agent is a maintenance debt you pay forever, on every
+          upstream release. So I took it upstream instead:
+          <strong>I authored the proposal</strong> (<a href="https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/33393"
+          rel="noopener" target="_blank">opentelemetry-collector-contrib #33393</a>) making the
+          case for Darwin CPU/disk support with CGO, pushed for it internally and in the issue, and
+          dug into the receiver&rsquo;s code to understand what the fix required. The
+          implementation PR that landed was authored by the component&rsquo;s maintainers — the
+          feature ships in the Collector today, and I&rsquo;ll take that outcome. Upstream is a
+          contact sport: an earlier PR of mine to Installomator, the Mac-admin install framework,
+          got beaten to the merge by a parallel fix after ten commits of work. You file anyway.
+          The commons is how you delete work forever.</p>
+
+        <div class="terminal" data-reveal>
+          <div class="terminal-bar" aria-hidden="true">
+            <span class="t-dot"></span><span class="t-dot"></span><span class="t-dot"></span>
+            <span class="t-title">darwin host metrics — before and after</span>
+          </div>
+          <pre class="terminal-body" aria-label="Before and after: querying host CPU metrics on macOS"><code><span class="t-line"><span class="t-prompt">$</span> <span class="t-cmd">otelcol query host.cpu.utilization</span>   <span class="t-prompt"># 2024, darwin</span></span>
+<span class="t-line">no data — scraper unsupported on this platform</span>
+<span class="t-line"><span class="t-prompt">$</span> <span class="t-cmd">otelcol query host.cpu.utilization</span>   <span class="t-prompt"># after #33393</span></span>
+<span class="t-line"><span class="t-res">host.cpu.utilization</span>  0.42  {cpu="0", state="user"} <span class="t-ok">✓</span></span>
+<span class="t-line"><span class="t-prompt">$</span> <span class="t-caret"></span></span></code></pre>
+        </div>
+
+        <p class="eyebrow">lessons</p>
+        <h2 data-reveal>What I&rsquo;d tell the next fleet.</h2>
+        <ul data-reveal>
+          <li><strong>Upstream-first beats forever-fork.</strong> Filing the issue was a one-time
+              cost; a private fork would have been a bill due on every upstream release, forever.</li>
+          <li><strong>Minimal distributions win.</strong> Every component you don&rsquo;t compile in is
+              attack surface, memory, and upgrade risk you don&rsquo;t carry.</li>
+          <li><strong>Collector config is code.</strong> The manifest and config lived in git and went
+              through CI like everything else — telemetry outages from hand-edited configs are
+              self-inflicted.</li>
+        </ul>
+
+        <p class="eyebrow">outcomes</p>
+        <h2 data-reveal>One pipeline, all the way down.</h2>
+        <p data-reveal>The distribution ran on 10,000+ endpoints and fed every SLI in the
+          <a href="fleet-automation.html">fleet control loop</a>. macOS host metrics now ship in the
+          upstream Collector for everyone. The same discipline runs this very website —
+          <a href="../observability.html">live SLOs, real-user vitals, and an error budget you can
+          inspect</a> — and carried into the security product I built on my own time:
+          <a href="copywarden.html">CopyWarden →</a></p>
+
+        <nav class="cs-nav" aria-label="Case studies">
+          <a href="fleet-automation.html">← prev: fleet automation</a>
+          <a class="btn btn-primary" href="../index.html#contact">Get in touch</a>
+          <a href="copywarden.html">next: CopyWarden →</a>
+        </nav>
+      </div>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-row">
+      <p>© 2026 Edward Vartanessian</p>
+      <p class="footer-mono">no frameworks, no cookies · deployed by CI · <a href="https://github.com/eddiev2" rel="noopener" target="_blank">view source</a></p>
+    </div>
+  </footer>
+
+  <script src="../script.js"></script>
+  <script src="../rum.js" defer></script>
+</body>
+</html>

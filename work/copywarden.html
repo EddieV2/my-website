@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CopyWarden: the clipboard, encrypted — Edward Vartanessian</title>
+  <meta name="description" content="Designing and shipping CopyWarden solo: an encrypted, screen-share-aware clipboard manager for macOS — AES-256-GCM, Secure Enclave key wrapping, and a published threat model.">
+  <link rel="canonical" href="https://evartanessian.dev/work/copywarden.html">
+  <meta property="og:title" content="CopyWarden: the clipboard, encrypted">
+  <meta property="og:description" content="An encrypted, screen-share-aware clipboard manager for macOS — designed, built, and shipped solo. Live at copywarden.com.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://evartanessian.dev/work/copywarden.html">
+  <meta property="og:image" content="https://evartanessian.dev/assets/og/copywarden.png">
+  <meta name="theme-color" content="#05060a">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+  <script src="../theme-init.js"></script>
+  <link rel="stylesheet" href="../styles.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "CopyWarden: the clipboard, encrypted",
+    "author": { "@type": "Person", "name": "Edward Vartanessian", "url": "https://evartanessian.dev" },
+    "url": "https://evartanessian.dev/work/copywarden.html"
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <nav class="nav" aria-label="Primary">
+      <a class="nav-name" href="../index.html">Edward Vartanessian</a>
+      <div class="nav-links">
+        <a href="../index.html#work">All work</a>
+        <a href="../resume.pdf" class="nav-hide-sm">Résumé</a>
+        <a href="../index.html#contact">Contact</a>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Switch to light theme" title="Toggle theme">
+          <svg class="icon-sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4 1.4-1.4"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main">
+    <div id="nav-sentinel" aria-hidden="true"></div>
+
+    <article>
+      <header class="cs-header container">
+        <nav aria-label="Breadcrumb"><a class="breadcrumb" href="../index.html#work">← Selected work</a></nav>
+        <p class="eyebrow">~/work/copywarden</p>
+        <h1 class="cs-title">CopyWarden: <span class="gradient-text">the clipboard, encrypted.</span></h1>
+        <p class="lead">Every clipboard manager holds the most sensitive text you touch all day —
+          and most of them store it in plaintext. CopyWarden is my answer: an encrypted,
+          screen-share-aware clipboard manager for macOS, designed, built, and shipped solo.
+          Live at <a href="https://copywarden.com" rel="noopener" target="_blank">copywarden.com</a>.</p>
+        <p class="cs-meta">Personal product · proprietary · Swift 6, swift-crypto, Secure Enclave,
+          XcodeGen, fastlane, GitHub Actions · site: S3 + CloudFront</p>
+      </header>
+
+      <section class="stats" aria-label="Product facts">
+        <div class="container">
+          <dl class="stats-grid">
+            <div class="stat" data-reveal>
+              <dd class="stat-value stat-badge">AES-256</dd>
+              <dt class="stat-label">GCM encryption before anything touches disk</dt>
+            </div>
+            <div class="stat" data-reveal style="--reveal-delay: 80ms">
+              <dd class="stat-value">0</dd>
+              <dt class="stat-label">bytes leave the device by default — local-first</dt>
+            </div>
+            <div class="stat" data-reveal style="--reveal-delay: 160ms">
+              <dd class="stat-value stat-badge">v0.6</dd>
+              <dt class="stat-label">shipped · signed · notarized · universal</dt>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <div class="container prose">
+        <p class="eyebrow">why</p>
+        <h2 data-reveal>The most sensitive buffer on your Mac.</h2>
+        <p data-reveal>Think about what crosses your clipboard in a day: passwords that miss the
+          password manager, API keys, patient names, deal terms, that one production connection
+          string. Clipboard managers make that history persistent — and the popular ones persist
+          it in plaintext. CopyWarden is built for the people who can never leak a clip:
+          clinicians, bankers, defense contractors, and the engineers who support them. The pitch
+          is one sentence: <strong>the Bitwarden of clipboard management.</strong></p>
+
+        <p class="eyebrow">crypto architecture</p>
+        <h2 data-reveal>Keys that never leave the hardware.</h2>
+        <p data-reveal>Every clip is encrypted with <strong>AES-256-GCM before it touches disk</strong>,
+          under a per-item key derived via HKDF-SHA256 from a randomly generated 256-bit master
+          key. On Macs with a Secure Enclave, the master key is stored wrapped by a
+          non-extractable Enclave key (ECIES) — the Enclave holds the wrapping key and never
+          releases it. Older Macs fall back to Keychain-only storage: device-local,
+          non-synchronizable, accessible only while the Mac is unlocked. Around the crypto core:
+          biometric gates on sensitive reveals, idle re-lock after inactivity, and secure memory
+          scrubbing after use. Per-item keys mean one compromised buffer never becomes a skeleton
+          key for the whole history.</p>
+
+        <figure class="diagram-wrap" data-reveal>
+          <svg class="diagram" viewBox="0 0 720 320" role="img" aria-labelledby="cw-diag-title cw-diag-desc">
+            <title id="cw-diag-title">CopyWarden&rsquo;s key hierarchy</title>
+            <desc id="cw-diag-desc">A clipboard item is encrypted with a per-item key derived by HKDF-SHA256 and written to disk as ciphertext only. The per-item keys derive from a 256-bit master key held in the Keychain, which is wrapped by a non-extractable Secure Enclave key.</desc>
+            <g class="d-row">
+              <rect x="8" y="40" width="150" height="62" rx="10"/>
+              <text x="83" y="68" class="d-label">clip captured</text>
+              <text x="83" y="86" class="d-sub">text · image · file ref</text>
+
+              <rect x="218" y="40" width="180" height="62" rx="10"/>
+              <text x="308" y="68" class="d-label">per-item key</text>
+              <text x="308" y="86" class="d-sub">HKDF-SHA256</text>
+
+              <rect x="458" y="40" width="150" height="62" rx="10"/>
+              <text x="533" y="68" class="d-label">AES-256-GCM</text>
+              <text x="533" y="86" class="d-sub">authenticated</text>
+
+              <path class="d-edge" d="M158 71 H218"/>
+              <path class="d-edge" d="M398 71 H458"/>
+              <path class="d-edge" d="M608 71 H648 Q660 71 660 83 V133"/>
+            </g>
+            <g class="d-you">
+              <rect x="540" y="133" width="172" height="64" rx="10"/>
+              <text x="626" y="161" class="d-label">disk</text>
+              <text x="626" y="179" class="d-sub">ciphertext only</text>
+            </g>
+            <g class="d-row">
+              <rect x="8" y="226" width="190" height="62" rx="10"/>
+              <text x="103" y="254" class="d-label">Secure Enclave</text>
+              <text x="103" y="272" class="d-sub">ECIES wrap · non-extractable</text>
+
+              <rect x="258" y="226" width="200" height="62" rx="10"/>
+              <text x="358" y="254" class="d-label">master key · 256-bit</text>
+              <text x="358" y="272" class="d-sub">Keychain · this-device-only</text>
+
+              <path class="d-edge" d="M198 257 H258"/>
+              <path class="d-edge" d="M358 226 V102"/>
+              <text x="360" y="316" class="d-sub">the Enclave holds the wrapping key and never releases it</text>
+            </g>
+          </svg>
+          <figcaption class="visually-hidden">CopyWarden&rsquo;s encryption key hierarchy.</figcaption>
+        </figure>
+
+        <p class="eyebrow">the signature feature</p>
+        <h2 data-reveal>Your history is not for the meeting.</h2>
+        <p data-reveal>The feature that started the whole project: when CopyWarden detects screen
+          capture, recording, or a video-call share — Zoom, Teams, Meet, OBS and more — it redacts
+          every preview behind a privacy banner. Your clipboard history stops being an accidental
+          slide in someone else&rsquo;s screenshot. Detection is best-effort and the
+          <strong>threat model says so, in public</strong> — a security tool that overclaims is
+          worse than no tool, so the docs state plainly what it can and cannot see, alongside
+          debugger detection and clipboard-access anomaly monitoring.</p>
+
+        <p class="eyebrow">shipping it</p>
+        <h2 data-reveal>Solo doesn&rsquo;t mean unserious.</h2>
+        <p data-reveal>A one-person product ships or it doesn&rsquo;t exist, so the release path is
+          fully automated: CI runs lint, unit, and UI tests — plus mutation testing, because test
+          suites lie — then builds universal arm64 + x86_64 binaries, signs with Developer ID,
+          submits for Apple notarization, and publishes. Releases 0.5.0 through 0.6.0 went out
+          this way. The product site is a static export served from
+          <strong>S3 behind CloudFront</strong> — the same stack I run at work, because I trust
+          the tools I operate.</p>
+
+        <div class="terminal" data-reveal>
+          <div class="terminal-bar" aria-hidden="true">
+            <span class="t-dot"></span><span class="t-dot"></span><span class="t-dot"></span>
+            <span class="t-title">release pipeline — abbreviated</span>
+          </div>
+          <pre class="terminal-body" aria-label="Abbreviated release pipeline output"><code><span class="t-line"><span class="t-prompt">$</span> <span class="t-cmd">./scripts/release.sh 0.6.0</span></span>
+<span class="t-line"><span class="t-res">test</span>      unit · ui · mutation <span class="t-ok">✓</span></span>
+<span class="t-line"><span class="t-res">build</span>     universal (arm64 + x86_64) <span class="t-ok">✓</span></span>
+<span class="t-line"><span class="t-res">sign</span>      Developer ID <span class="t-ok">✓</span></span>
+<span class="t-line"><span class="t-res">notarize</span>  submitted → <span class="t-ok">Accepted</span></span>
+<span class="t-line"><span class="t-res">publish</span>   copywarden.com <span class="t-ok">✓</span></span>
+<span class="t-line"><span class="t-prompt">$</span> <span class="t-caret"></span></span></code></pre>
+        </div>
+
+        <p class="eyebrow">lessons</p>
+        <h2 data-reveal>What building it alone taught me.</h2>
+        <ul data-reveal>
+          <li><strong>Honesty is a security feature.</strong> Publishing a threat model that admits
+              detection is best-effort earned more trust than any marketing claim could.</li>
+          <li><strong>Owning every layer changes how you build.</strong> Crypto design, Swift
+              concurrency, CI, signing, notarization, DNS, CDN — there&rsquo;s no &ldquo;someone
+              else&rsquo;s problem&rdquo; on a solo product, and that discipline transfers straight
+              back to platform work.</li>
+          <li><strong>Local-first is a spine, not a checkbox.</strong> Nothing syncs unless the user
+              turns it on; end-to-end encrypted sync is code-complete and stays off by default.</li>
+        </ul>
+
+        <p class="eyebrow">where it stands</p>
+        <h2 data-reveal>Live, shipping, iterating.</h2>
+        <p data-reveal>CopyWarden is live at
+          <a href="https://copywarden.com" rel="noopener" target="_blank">copywarden.com</a> with
+          signed, notarized universal builds. The encrypted-sync transports (iCloud, then WebDAV
+          and peer-to-peer on the same ciphertext envelope) are in final verification. It&rsquo;s
+          the proof behind the sentence at the top of this site: I build things and keep them
+          reliable — even when the &ldquo;team&rdquo; is one person.</p>
+
+        <nav class="cs-nav" aria-label="Case studies">
+          <a href="otel-collector.html">← prev: the OTel Collector</a>
+          <a class="btn btn-primary" href="../index.html#contact">Get in touch</a>
+          <a href="fleet-automation.html">next: fleet automation →</a>
+        </nav>
+      </div>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-row">
+      <p>© 2026 Edward Vartanessian</p>
+      <p class="footer-mono">no frameworks, no cookies · deployed by CI · <a href="https://github.com/eddiev2" rel="noopener" target="_blank">view source</a></p>
+    </div>
+  </footer>
+
+  <script src="../script.js"></script>
+  <script src="../rum.js" defer></script>
+</body>
+</html>

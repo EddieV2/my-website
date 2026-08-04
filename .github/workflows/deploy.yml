@@ -1,0 +1,52 @@
+name: Deploy to AWS (S3 + CloudFront)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Keyless deploys: GitHub OIDC → short-lived AWS credentials. No stored keys.
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assume the deploy role via OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync site to S3
+        run: |
+          # Long-lived immutable cache for fonts/images (stable filenames)…
+          aws s3 sync assets "s3://${{ vars.S3_BUCKET }}/assets" --delete \
+            --cache-control "public, max-age=31536000, immutable"
+          # …short cache for everything else so edits show up fast.
+          # status.json is written by the observability publisher Lambda —
+          # never let a deploy delete or overwrite it.
+          aws s3 sync . "s3://${{ vars.S3_BUCKET }}" --delete \
+            --exclude ".git/*" --exclude ".github/*" --exclude "terraform/*" \
+            --exclude "private/*" --exclude "assets/*" \
+            --exclude "README.md" --exclude ".gitignore" \
+            --exclude "status.json" --exclude "status.sample.json" \
+            --cache-control "public, max-age=300"
+
+      - name: Invalidate CloudFront
+        run: |
+          # A wildcard counts as ONE invalidation path (1,000 free per month).
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/*"
