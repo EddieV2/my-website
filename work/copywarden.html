@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CopyWarden: the clipboard, encrypted — Edward Vartanessian</title>
-  <meta name="description" content="Designing and shipping CopyWarden solo: an encrypted, screen-share-aware clipboard manager for macOS — AES-256-GCM, Secure Enclave key wrapping, and a published threat model.">
+  <title>Copywarden: the clipboard, encrypted — Edward Vartanessian</title>
+  <meta name="description" content="Designing and building Copywarden solo: an encrypted, screen-share-aware clipboard manager for macOS — AES-256-GCM, Secure Enclave key wrapping, and a published threat model.">
   <link rel="canonical" href="https://evartanessian.dev/work/copywarden.html">
-  <meta property="og:title" content="CopyWarden: the clipboard, encrypted">
-  <meta property="og:description" content="An encrypted, screen-share-aware clipboard manager for macOS — designed, built, and shipped solo. Live at copywarden.com.">
+  <meta property="og:title" content="Copywarden: the clipboard, encrypted">
+  <meta property="og:description" content="An encrypted, screen-share-aware clipboard manager for macOS — designed and built solo.">
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://evartanessian.dev/work/copywarden.html">
   <meta property="og:image" content="https://evartanessian.dev/assets/og/copywarden.png">
@@ -20,7 +20,7 @@
   {
     "@context": "https://schema.org",
     "@type": "TechArticle",
-    "headline": "CopyWarden: the clipboard, encrypted",
+    "headline": "Copywarden: the clipboard, encrypted",
     "author": { "@type": "Person", "name": "Edward Vartanessian", "url": "https://evartanessian.dev" },
     "url": "https://evartanessian.dev/work/copywarden.html"
   }
@@ -51,11 +51,11 @@
       <header class="cs-header container">
         <nav aria-label="Breadcrumb"><a class="breadcrumb" href="../index.html#work">← Selected work</a></nav>
         <p class="eyebrow">~/work/copywarden</p>
-        <h1 class="cs-title">CopyWarden: <span class="gradient-text">the clipboard, encrypted.</span></h1>
+        <h1 class="cs-title">Copywarden: <span class="gradient-text">the clipboard, encrypted.</span></h1>
         <p class="lead">Every clipboard manager holds the most sensitive text you touch all day —
-          and most of them store it in plaintext. CopyWarden is my answer: an encrypted,
-          screen-share-aware clipboard manager for macOS, designed, built, and shipped solo.
-          Live at <a href="https://copywarden.com" rel="noopener" target="_blank">copywarden.com</a>.</p>
+          and most of them store it in plaintext. Copywarden is my answer: an encrypted,
+          screen-share-aware clipboard manager for macOS, designed and built solo —
+          <a href="https://copywarden.com" rel="noopener" target="_blank">copywarden.com</a>.</p>
         <p class="cs-meta">Personal product · proprietary · Swift 6, swift-crypto, Secure Enclave,
           XcodeGen, fastlane, GitHub Actions · site: S3 + CloudFront</p>
       </header>
@@ -72,8 +72,8 @@
               <dt class="stat-label">bytes leave the device by default — local-first</dt>
             </div>
             <div class="stat" data-reveal style="--reveal-delay: 160ms">
-              <dd class="stat-value stat-badge">v0.6</dd>
-              <dt class="stat-label">shipped · signed · notarized · universal</dt>
+              <dd class="stat-value stat-badge">v0.8</dd>
+              <dt class="stat-label">signed · notarized · universal builds</dt>
             </div>
           </dl>
         </div>
@@ -85,7 +85,7 @@
         <p data-reveal>Think about what crosses your clipboard in a day: passwords that miss the
           password manager, API keys, patient names, deal terms, that one production connection
           string. Clipboard managers make that history persistent — and the popular ones persist
-          it in plaintext. CopyWarden is built for the people who can never leak a clip:
+          it in plaintext. Copywarden is built for the people who can never leak a clip:
           clinicians, bankers, defense contractors, and the engineers who support them. The pitch
           is one sentence: <strong>the Bitwarden of clipboard management.</strong></p>
 
@@ -103,7 +103,7 @@
 
         <figure class="diagram-wrap" data-reveal>
           <svg class="diagram" viewBox="0 0 720 320" role="img" aria-labelledby="cw-diag-title cw-diag-desc">
-            <title id="cw-diag-title">CopyWarden&rsquo;s key hierarchy</title>
+            <title id="cw-diag-title">Copywarden&rsquo;s key hierarchy</title>
             <desc id="cw-diag-desc">A clipboard item is encrypted with a per-item key derived by HKDF-SHA256 and written to disk as ciphertext only. The per-item keys derive from a 256-bit master key held in the Keychain, which is wrapped by a non-extractable Secure Enclave key.</desc>
             <g class="d-row">
               <rect x="8" y="40" width="150" height="62" rx="10"/>
@@ -141,12 +141,12 @@
               <text x="360" y="316" class="d-sub">the Enclave holds the wrapping key and never releases it</text>
             </g>
           </svg>
-          <figcaption class="visually-hidden">CopyWarden&rsquo;s encryption key hierarchy.</figcaption>
+          <figcaption class="visually-hidden">Copywarden&rsquo;s encryption key hierarchy.</figcaption>
         </figure>
 
         <p class="eyebrow">the signature feature</p>
         <h2 data-reveal>Your history is not for the meeting.</h2>
-        <p data-reveal>The feature that started the whole project: when CopyWarden detects screen
+        <p data-reveal>The feature that started the whole project: when Copywarden detects screen
           capture, recording, or a video-call share — Zoom, Teams, Meet, OBS and more — it redacts
           every preview behind a privacy banner. Your clipboard history stops being an accidental
           slide in someone else&rsquo;s screenshot. Detection is best-effort and the
@@ -156,11 +156,11 @@
 
         <p class="eyebrow">shipping it</p>
         <h2 data-reveal>Solo doesn&rsquo;t mean unserious.</h2>
-        <p data-reveal>A one-person product ships or it doesn&rsquo;t exist, so the release path is
-          fully automated: CI runs lint, unit, and UI tests — plus mutation testing, because test
-          suites lie — then builds universal arm64 + x86_64 binaries, signs with Developer ID,
-          submits for Apple notarization, and publishes. Releases 0.5.0 through 0.6.0 went out
-          this way. The product site is a static export served from
+        <p data-reveal>A one-person product needs a release path that never depends on someone
+          remembering a step, so it&rsquo;s fully automated: CI runs lint, unit, and UI tests —
+          plus mutation testing, because test suites lie — then builds universal arm64 + x86_64
+          binaries, signs with Developer ID, submits for Apple notarization, and publishes.
+          Builds through 0.8 go out this way. The product site is a static export served from
           <strong>S3 behind CloudFront</strong> — the same stack I run at work, because I trust
           the tools I operate.</p>
 
@@ -192,13 +192,17 @@
         </ul>
 
         <p class="eyebrow">where it stands</p>
-        <h2 data-reveal>Live, shipping, iterating.</h2>
-        <p data-reveal>CopyWarden is live at
-          <a href="https://copywarden.com" rel="noopener" target="_blank">copywarden.com</a> with
-          signed, notarized universal builds. The encrypted-sync transports (iCloud, then WebDAV
-          and peer-to-peer on the same ciphertext envelope) are in final verification. It&rsquo;s
-          the proof behind the sentence at the top of this site: I build things and keep them
-          reliable — even when the &ldquo;team&rdquo; is one person.</p>
+        <h2 data-reveal>Built, and still being sharpened.</h2>
+        <p data-reveal>The product exists: signed, notarized universal builds, an encrypted store,
+          the redaction behavior described above, and a published threat model and disclosure
+          policy at <a href="https://copywarden.com" rel="noopener" target="_blank">copywarden.com</a>.
+          The encrypted-sync transports (iCloud, then WebDAV and peer-to-peer on the same
+          ciphertext envelope) are in verification.</p>
+        <p data-reveal>It isn&rsquo;t public yet, and that&rsquo;s deliberate — I&rsquo;d rather
+          hold it than ship something that loses to the incumbents on the first comparison. What
+          it already proves is the part I care about here: I can take a security product from
+          crypto design through CI, signing, notarization, DNS and CDN by myself, and hold it to
+          a standard the marketing page states plainly — only claims we can prove.</p>
 
         <nav class="cs-nav" aria-label="Case studies">
           <a href="otel-collector.html">← prev: the OTel Collector</a>
