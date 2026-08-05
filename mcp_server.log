@@ -1,0 +1,16 @@
+2026-08-05 12:15:07 - mcp_server.core.logging - INFO - Logging initialized - Level: INFO, File: mcp_server.log
+2026-08-05 12:15:07 - mcp_server.metrics.metrics_collector - INFO - Initialized global metrics collector
+2026-08-05 12:15:07 - mcp_server.metrics.health_check - INFO - Registered health check for component: system
+2026-08-05 12:15:07 - mcp_server.metrics.health_check - INFO - Registered health check for component: memory
+2026-08-05 12:15:07 - mcp_server.metrics.health_check - INFO - Registered health check for component: disk
+2026-08-05 12:15:07 - mcp_server.metrics.middleware - INFO - Initialized business metrics collector
+2026-08-05 12:15:07 - mcp_server.metrics.middleware - INFO - Initialized global business metrics collector
+2026-08-05 12:15:07 - mcp_server.metrics.middleware - INFO - Initialized metrics middleware
+2026-08-05 12:15:07 - mcp_server.metrics.middleware - INFO - Added metrics middleware to FastAPI application
+2026-08-05 12:15:07 - mcp_server.gateway - WARNING - CORS_ORIGINS is unset — no cross-origin requests will be allowed. Set CORS_ORIGINS to a comma-separated allowlist (never '*' in production).
+2026-08-05 12:15:07 - mcp_server.storage.repository_registry - INFO - Loaded 1 repositories from registry
+2026-08-05 12:15:07 - mcp_server.storage.repository_registry - INFO - Repository registry initialized at /Users/ed/.mcp/repository_registry.json
+2026-08-05 12:15:07 - mcp_server.metrics.prometheus_exporter - WARNING - prometheus_client is not available; exporting metrics as no-ops
+2026-08-05 12:15:07 - mcp_server.metrics.prometheus_exporter - WARNING - prometheus_client unavailable; PrometheusExporter.start is a no-op
+2026-08-05 12:15:07 - mcp_server.cli.stdio_runner - WARNING - running unauthenticated — MCP_CLIENT_SECRET not set
+2026-08-05 12:15:07 - mcp.server.lowlevel.server - INFO - Processing request of type ListToolsRequest

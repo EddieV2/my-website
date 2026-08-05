@@ -80,8 +80,31 @@ resource "aws_lambda_function" "fn" {
       # would create a cycle (distribution → rum function URL → lambdas).
       BUCKET             = aws_s3_bucket.site.bucket
       DISTRIBUTION_PARAM = "/ev-site/distribution-id"
-      } : {}
+      } : each.key == "synthetic" ? {
+      # Read at runtime from SSM — a direct reference to the distribution would
+      # cycle (distribution → rum function URL → lambdas).
+      ORIGIN_PARAM = "/ev-site/distribution-domain"
+    } : {}
   }
+}
+
+resource "aws_ssm_parameter" "distribution_domain" {
+  name  = "/ev-site/distribution-domain"
+  type  = "String"
+  value = "https://${aws_cloudfront_distribution.site.domain_name}"
+}
+
+resource "aws_iam_role_policy" "synthetic_ssm" {
+  name = "read-origin-param"
+  role = aws_iam_role.lambda["synthetic"].id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["ssm:GetParameter"]
+      Resource = aws_ssm_parameter.distribution_domain.arn
+    }]
+  })
 }
 
 resource "aws_ssm_parameter" "distribution_id" {

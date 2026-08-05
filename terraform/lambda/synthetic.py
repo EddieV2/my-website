@@ -6,13 +6,20 @@ CloudWatch EMF metrics. This feeds the site's 99.9%/30d availability SLO.
 """
 
 import json
+import os
 import time
 import urllib.request
 
-TARGETS = [
-    "https://evartanessian.dev/",
-    "https://evartanessian.dev/work/otel-collector.html",
-]
+import boto3
+
+# Probe the distribution directly rather than the vanity domain: this measures
+# whether the service is serving, which is what the availability SLO is about.
+# DNS/registrar state is a separate failure domain and would otherwise show up
+# here as an origin outage that never happened.
+ORIGIN = boto3.client("ssm").get_parameter(
+    Name=os.environ["ORIGIN_PARAM"]
+)["Parameter"]["Value"].rstrip("/")
+TARGETS = [f"{ORIGIN}/", f"{ORIGIN}/work/otel-collector.html"]
 TIMEOUT_S = 10
 
 
