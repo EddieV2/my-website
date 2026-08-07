@@ -1,17 +1,16 @@
 # evartanessian.dev — personal site
 
-Static, dependency-free personal site for Edward Vartanessian — software engineer
-(platform & infrastructure). No frameworks, no build step. The site is its own
-demo: the infrastructure serving it is defined in this repo.
+Personal site for Edward Vartanessian — software engineer (platform &
+infrastructure). The site is its own demo: the infrastructure serving it, the
+pipeline deploying it, and the SLOs measuring it are all defined in this repo.
 
 > **How it was built:** in pair-programming sessions with an AI assistant
-> (Claude), the way I build everything now. No site builders, no templates,
-> no frameworks — and no pretending otherwise. I review, own, and maintain
-> every line.
+> (Claude), the way I build everything now — and no pretending otherwise.
+> I review, own, and maintain every line.
 
 ## Stack
 
-- Framework-free HTML + CSS + a little vanilla JS
+- HTML + CSS + vanilla JS, no build step
 - Self-hosted variable fonts (Space Grotesk + Inter, latin subset) — zero
   third-party requests
 - Case studies under `work/`

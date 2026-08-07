@@ -14,3 +14,6 @@ terraform/*.tfvars
 
 # Generated Word resume (regenerate with pandoc; see README)
 *.docx
+
+# Stray tool logs
+*.log
