@@ -20,6 +20,14 @@ BUCKET = os.environ["BUCKET"]
 DISTRIBUTION_ID = ssm.get_parameter(Name=os.environ["DISTRIBUTION_PARAM"])["Parameter"]["Value"]
 
 AVAILABILITY_TARGET = 99.9      # % over 30 days (synthetic)
+
+# The SLO measures the service as launched. Before this date the domain was
+# deliberately unpointed while the site still carried claims that hadn't been
+# verified, so probe failures then record a config state that was chosen, not
+# unplanned downtime — the thing an error budget exists to measure. The window
+# is floored here and the start date is published in status.json so the page
+# states it rather than quietly applying it.
+SERVICE_START = dt.datetime(2026, 8, 6, tzinfo=dt.timezone.utc)
 LCP_TARGET_MS = 1500            # p75 (RUM)
 
 
@@ -48,6 +56,9 @@ def _metric(namespace, name, stat, start, end, period, dimensions=None):
 def handler(_event, _context):
     now = dt.datetime.now(dt.timezone.utc)
     d30, d7, h24 = now - dt.timedelta(days=30), now - dt.timedelta(days=7), now - dt.timedelta(hours=24)
+    # Never reach back past launch — see SERVICE_START.
+    d30 = max(d30, SERVICE_START)
+    window_days = max(1, (now - d30).days)
     cf_dims = [
         {"Name": "DistributionId", "Value": DISTRIBUTION_ID},
         {"Name": "Region", "Value": "Global"},
@@ -55,7 +66,7 @@ def handler(_event, _context):
 
     # Availability: average of 0/1 checks. Daily buckets for the sparkline.
     avail_daily = _metric("EvSite/Synthetics", "Availability", "Average", d30, now, 86400)
-    avail_all = _metric("EvSite/Synthetics", "Availability", "Average", d30, now, 30 * 86400)
+    avail_all = _metric("EvSite/Synthetics", "Availability", "Average", d30, now, 31 * 86400)
     availability_pct = round(avail_all[0][1] * 100, 3) if avail_all else None
 
     budget_remaining = None
@@ -89,7 +100,8 @@ def handler(_event, _context):
                 "target_pct": AVAILABILITY_TARGET,
                 "actual_pct": availability_pct,
                 "budget_remaining_pct": budget_remaining,
-                "window_days": 30,
+                "window_days": window_days,
+                "since": d30.date().isoformat(),
             },
             "lcp": {
                 "target_p75_ms": LCP_TARGET_MS,

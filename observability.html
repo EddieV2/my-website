@@ -55,7 +55,7 @@
           <dl class="stats-grid">
             <div class="stat">
               <dd class="stat-value" id="slo-availability">—</dd>
-              <dt class="stat-label">availability, 30 days
+              <dt class="stat-label">availability, since launch
                 <span class="stat-target">target ≥ 99.9% · synthetic, 5-min checks</span>
                 <span class="status-pill" id="pill-availability">…</span>
               </dt>
@@ -87,16 +87,19 @@
         <p class="obs-empty" id="obs-empty">status.json isn&rsquo;t published yet — the pipeline is
           collecting its first data. Check back soon; the publisher runs hourly.</p>
 
-        <p class="obs-updated" style="margin-bottom: 1.5rem">Note: the 30-day availability window
-          is still filling, and it includes probe failures from before the site was serving. The
-          number is real, not reset — an error budget you rewrite when it looks bad isn&rsquo;t an
-          error budget.</p>
+        <p class="obs-updated" style="margin-bottom: 1.5rem">Note: availability is measured from
+          <strong>6 August 2026</strong>, when this site went into service, on a rolling 30-day
+          window thereafter. Before that date the domain was deliberately unpointed while I was
+          still verifying the claims on these pages — probe failures from that period record a
+          configuration I chose, not unplanned downtime, which is the thing an error budget exists
+          to measure. Nothing inside the window is excluded or reset: an error budget you rewrite
+          when it looks bad isn&rsquo;t an error budget.</p>
 
         <div class="spark-grid">
           <figure class="spark-figure">
-            <figcaption>availability — last 30 days (%)</figcaption>
+            <figcaption>availability — daily (%)</figcaption>
             <svg class="spark-svg" id="spark-availability" viewBox="0 0 320 96" role="img"
-                 aria-label="Sparkline of daily availability over the last 30 days"></svg>
+                 aria-label="Sparkline of daily availability since launch"></svg>
             <details><summary>view as table</summary>
               <table><thead><tr><th scope="col">day</th><th scope="col">availability %</th></tr></thead>
               <tbody id="table-availability"></tbody></table>
