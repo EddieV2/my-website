@@ -30,6 +30,14 @@ AVAILABILITY_TARGET = 99.9      # % over 30 days (synthetic)
 SERVICE_START = dt.datetime(2026, 8, 6, tzinfo=dt.timezone.utc)
 LCP_TARGET_MS = 1500            # p75 (RUM)
 
+# A p75 needs enough sessions to actually be a 75th percentile. Below this the
+# tile still publishes the measurement, but withholds the pass/fail verdict: at
+# single-digit sample counts one cold cache or one bad mobile session scores the
+# SLO, which measures the sample rather than the service. Published as a field
+# so the page can state the reason instead of quietly suppressing a breach --
+# same reasoning as SERVICE_START.
+LCP_MIN_SAMPLES = 100
+
 
 def _metric(namespace, name, stat, start, end, period, dimensions=None):
     resp = cw.get_metric_data(
@@ -107,6 +115,9 @@ def handler(_event, _context):
                 "target_p75_ms": LCP_TARGET_MS,
                 "actual_p75_ms": vitals["lcp_p75_ms"],
                 "window_days": 7,
+                "samples": vitals["samples_7d"],
+                "min_samples": LCP_MIN_SAMPLES,
+                "sufficient_samples": (vitals["samples_7d"] or 0) >= LCP_MIN_SAMPLES,
             },
         },
         "vitals": vitals,

@@ -14,10 +14,10 @@
     return Number(n).toLocaleString('en-US', { maximumFractionDigits: digits === undefined ? 0 : digits });
   }
 
-  function pill(id, met, okText, warnText) {
+  function pill(id, met, okText, warnText, neutralText) {
     var p = el(id);
     if (!p) return;
-    if (met === null) { p.textContent = 'no data yet'; return; }
+    if (met === null) { p.textContent = neutralText || 'no data yet'; return; }
     p.classList.add(met ? 'ok' : 'warn');
     p.textContent = (met ? '✓ ' : '! ') + (met ? okText : warnText);
   }
@@ -106,9 +106,22 @@
       pill('pill-availability', av.actual_pct === null ? null : av.actual_pct >= av.target_pct,
         'SLO met', 'SLO at risk');
       setText('slo-budget', av.budget_remaining_pct === null ? '—' : fmt(av.budget_remaining_pct, 0) + '%');
+      /* Allowed downtime is derived from the window actually accrued, not a
+         nominal 30 days -- the window is floored at launch and grows into it. */
+      if (av.window_days) {
+        var allowedMin = av.window_days * 24 * 60 * (100 - av.target_pct) / 100;
+        setText('slo-budget-target', 'of ' + fmt(allowedMin, 1) + ' min allowed downtime / ' +
+          av.window_days + 'd');
+      }
+      /* A p75 from a handful of sessions describes the sample, not the service,
+         so the verdict is withheld until the window carries enough of them. The
+         measurement still renders -- the pill states why it is not yet scored. */
+      var lcpScored = lcp.sufficient_samples !== false;
       setText('slo-lcp', lcp.actual_p75_ms === null ? '—' : (lcp.actual_p75_ms / 1000).toFixed(2) + 's');
-      pill('pill-lcp', lcp.actual_p75_ms === null ? null : lcp.actual_p75_ms < lcp.target_p75_ms,
-        'SLO met', 'SLO at risk');
+      pill('pill-lcp',
+        (lcp.actual_p75_ms === null || !lcpScored) ? null : lcp.actual_p75_ms < lcp.target_p75_ms,
+        'SLO met', 'SLO at risk',
+        lcpScored ? null : 'awaiting samples · ' + fmt(lcp.samples) + '/' + fmt(lcp.min_samples));
       setText('stat-requests', fmt(s.traffic.requests_24h));
       setText('stat-errors', 'error rate: ' + (s.traffic.error_rate_24h_pct === null ? '—' : fmt(s.traffic.error_rate_24h_pct, 2) + '%'));
 

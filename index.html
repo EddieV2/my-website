@@ -169,12 +169,18 @@
             <div class="job-body">
               <h3>Software Engineer</h3>
               <ul>
-                <li>Building a <strong>greenfield internal procurement &amp; ITSM platform</strong> on AWS —
-                    Lambda, Aurora PostgreSQL, S3, CloudFront, Route&nbsp;53, IAM and VPC networking —
-                    infrastructure in Terraform, delivered by GitHub Actions CI/CD.</li>
+                <li>Building a <strong>greenfield internal procurement &amp; ITSM platform</strong> on AWS,
+                    built to replace two enterprise SaaS products — Lambda, Aurora PostgreSQL, S3,
+                    CloudFront, Route&nbsp;53, IAM and VPC networking — infrastructure in Terraform,
+                    delivered by GitHub Actions CI/CD.</li>
                 <li><strong>Own the platform's data layer</strong> — Aurora Serverless v2 in Terraform across
-                    dev, staging and production, with schema migrations applied by a gated in-VPC migrator
-                    using IAM authentication and no stored database password.</li>
+                    dev, staging and production — and one of <strong>two required approvers</strong> for
+                    infrastructure and security changes platform-wide.</li>
+                <li><strong>Designed the database access model — no stored password anywhere in the
+                    path</strong>: an in-VPC Lambda migrator authenticating through IAM, with
+                    schema-migration and application roles separated so the application cannot alter
+                    schema. Version-controlled, peer-reviewed Drizzle migrations, validated end to end
+                    against dev Aurora including a tested forward-only rollback.</li>
                 <li>Designed and built the <strong>self-service machine-ordering site end to end</strong> —
                     the platform's primary user-facing workflow.</li>
                 <li>Developing ServiceNow automations and integrations: scripted workflows, catalog
@@ -294,7 +300,7 @@
           <p class="section-sub">This page is its own demo: a static site served from a
             private S3 bucket behind CloudFront — TLS, security headers, and the keyless CI deploy
             pipeline all defined in Terraform, all in the
-            <a href="https://github.com/eddiev2" rel="noopener" target="_blank">public repo</a>.
+            <a href="https://github.com/EddieV2/my-website" rel="noopener" target="_blank">public repo</a>.
             And it&rsquo;s observed: <a href="observability.html">live SLOs with a visible error
             budget →</a></p>
         </header>
@@ -408,7 +414,7 @@
   <footer class="site-footer">
     <div class="container footer-row">
       <p>© 2026 Edward Vartanessian</p>
-      <p class="footer-mono">no cookies, no trackers · deployed by CI · <a href="observability.html">status</a> · <a href="https://github.com/eddiev2" rel="noopener" target="_blank">view source</a></p>
+      <p class="footer-mono">no cookies, no trackers · deployed by CI · <a href="observability.html">status</a> · <a href="https://github.com/EddieV2/my-website" rel="noopener" target="_blank">view source</a></p>
     </div>
   </footer>
 

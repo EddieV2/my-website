@@ -2,7 +2,7 @@
   "generated_at": "2026-07-31T14:00:00+00:00",
   "slo": {
     "availability": { "target_pct": 99.9, "actual_pct": 99.98, "budget_remaining_pct": 80.0, "window_days": 30 },
-    "lcp": { "target_p75_ms": 1500, "actual_p75_ms": 840, "window_days": 7 }
+    "lcp": { "target_p75_ms": 1500, "actual_p75_ms": 840, "window_days": 7, "samples": 412, "min_samples": 100, "sufficient_samples": true }
   },
   "vitals": { "lcp_p75_ms": 840, "cls_p75": 0.01, "inp_p75_ms": 64, "ttfb_p75_ms": 118, "samples_7d": 412 },
   "traffic": { "requests_24h": 1834, "error_rate_24h_pct": 0.12 },
