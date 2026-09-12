@@ -113,25 +113,30 @@
         setText('slo-budget-target', 'of ' + fmt(allowedMin, 1) + ' min allowed downtime / ' +
           av.window_days + 'd');
       }
-      /* A p75 from a handful of sessions describes the sample, not the service,
-         so the verdict is withheld until the window carries enough of them. The
-         measurement still renders -- the pill states why it is not yet scored. */
+      /* A p75 from a handful of sessions describes the sample, not the service.
+         Below the threshold the figure is withheld outright rather than printed
+         with a caveat under it: a number the page cannot support undermines the
+         ones it can. The pill carries the reason, and the sample count -- which
+         is a real measurement -- keeps rendering. */
       var lcpSamples = lcp.samples === undefined ? s.vitals.samples_7d : lcp.samples;
       var lcpMinSamples = lcp.min_samples === undefined ? 100 : lcp.min_samples;
-      var lcpScored = lcp.sufficient_samples === undefined
+      var rumScored = lcp.sufficient_samples === undefined
         ? (lcpSamples || 0) >= lcpMinSamples
         : lcp.sufficient_samples;
-      setText('slo-lcp', lcp.actual_p75_ms === null ? '—' : (lcp.actual_p75_ms / 1000).toFixed(2) + 's');
+      setText('slo-lcp', (!rumScored || lcp.actual_p75_ms === null)
+        ? '—' : (lcp.actual_p75_ms / 1000).toFixed(2) + 's');
       pill('pill-lcp',
-        (lcp.actual_p75_ms === null || !lcpScored) ? null : lcp.actual_p75_ms < lcp.target_p75_ms,
+        (lcp.actual_p75_ms === null || !rumScored) ? null : lcp.actual_p75_ms < lcp.target_p75_ms,
         'SLO met', 'SLO at risk',
-        lcpScored ? null : 'awaiting samples · ' + fmt(lcpSamples) + '/' + fmt(lcpMinSamples));
+        rumScored ? null : 'awaiting samples · ' + fmt(lcpSamples) + '/' + fmt(lcpMinSamples));
       setText('stat-requests', fmt(s.traffic.requests_24h));
       setText('stat-errors', 'error rate: ' + (s.traffic.error_rate_24h_pct === null ? '—' : fmt(s.traffic.error_rate_24h_pct, 2) + '%'));
 
-      setText('v-cls', s.vitals.cls_p75 === null ? '—' : fmt(s.vitals.cls_p75, 3));
-      setText('v-inp', s.vitals.inp_p75_ms === null ? '—' : fmt(s.vitals.inp_p75_ms) + 'ms');
-      setText('v-ttfb', s.vitals.ttfb_p75_ms === null ? '—' : fmt(s.vitals.ttfb_p75_ms) + 'ms');
+      /* Drawn from the same RUM pool as the LCP SLO, so withheld on the same
+         threshold -- these three are noisier than LCP, not less. */
+      setText('v-cls', (!rumScored || s.vitals.cls_p75 === null) ? '—' : fmt(s.vitals.cls_p75, 3));
+      setText('v-inp', (!rumScored || s.vitals.inp_p75_ms === null) ? '—' : fmt(s.vitals.inp_p75_ms) + 'ms');
+      setText('v-ttfb', (!rumScored || s.vitals.ttfb_p75_ms === null) ? '—' : fmt(s.vitals.ttfb_p75_ms) + 'ms');
       setText('v-samples', fmt(s.vitals.samples_7d));
 
       var when = new Date(s.generated_at);

@@ -90,6 +90,17 @@ def handler(_event, _context):
         rows = _metric(namespace, name, stat, start, now, period)
         return round(rows[-1][1], 1) if rows else None
 
+    def window(namespace, name, stat, start, period, dimensions):
+        # Aggregate the whole window rather than its last bucket. A 24h window
+        # on a daily period straddles the UTC boundary and comes back as two
+        # partial buckets, so taking rows[-1] reports however much of today has
+        # accrued -- near zero just after midnight. Hourly buckets, summed.
+        rows = _metric(namespace, name, stat, start, now, period, dimensions)
+        if not rows:
+            return None
+        values = [v for _, v in rows]
+        return round(sum(values) if stat == "Sum" else sum(values) / len(values), 1)
+
     vitals = {
         "lcp_p75_ms": single("EvSite/RUM", "LCP", "p75", d7, 7 * 86400),
         "cls_p75": single("EvSite/RUM", "CLS", "p75", d7, 7 * 86400),
@@ -98,8 +109,8 @@ def handler(_event, _context):
         "samples_7d": single("EvSite/RUM", "PageView", "SampleCount", d7, 7 * 86400),
     }
 
-    requests_24h = single("AWS/CloudFront", "Requests", "Sum", h24, 86400)
-    error_rate = single("AWS/CloudFront", "TotalErrorRate", "Average", h24, 86400)
+    requests_24h = window("AWS/CloudFront", "Requests", "Sum", h24, 3600, cf_dims)
+    error_rate = window("AWS/CloudFront", "TotalErrorRate", "Average", h24, 3600, cf_dims)
 
     status = {
         "generated_at": now.isoformat(timespec="seconds"),
