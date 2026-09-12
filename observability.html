@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>This site is observed — Edward Vartanessian</title>
-  <meta name="description" content="Live SLOs for evartanessian.dev: real-user Web Vitals, synthetic availability probes, and a visible error budget — custom RUM, CloudWatch EMF, no cookies, no tracking.">
+  <meta name="description" content="Live SLOs for evartanessian.dev: real-user Web Vitals, synthetic availability probes, and a visible error budget — custom RUM, CloudWatch EMF, no cookies, no third-party tracking.">
   <link rel="canonical" href="https://evartanessian.dev/observability.html">
   <meta property="og:title" content="This site is observed — live SLOs for evartanessian.dev">
-  <meta property="og:description" content="Real-user Web Vitals, synthetic probes, and a visible error budget — observability without surveillance.">
+  <meta property="og:description" content="Real-user Web Vitals, synthetic probes, and a visible error budget — SLOs as code, published live.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://evartanessian.dev/observability.html">
   <meta property="og:image" content="https://evartanessian.dev/assets/og/observability.png">
@@ -180,8 +180,10 @@
           purpose-built beacon, two tiny Lambdas, and CloudWatch's embedded metric format. Same
           discipline — SLIs first, SLOs as code, error budgets you can see — sized for the system
           it observes.</p>
-        <p>And it observes pages, not people: no cookies, no identifiers, no IP retention, and the
-          beacon honors Do Not Track. Observability without surveillance.
+        <p>The beacon observes pages, not people: no cookies, no identifiers, no fingerprinting,
+          and it honors Do Not Track. Separately, the CDN keeps standard access logs &mdash;
+          including client IP &mdash; for 90 days, first-party only, never shared or sold. Two
+          different jobs: the beacon measures the experience, the logs record the traffic.
           The whole pipeline is in the <a href="https://github.com/EddieV2/my-website" rel="noopener" target="_blank">public repo</a>.</p>
 
         <nav class="cs-nav" aria-label="Site">
@@ -196,7 +198,7 @@
   <footer class="site-footer">
     <div class="container footer-row">
       <p>© 2026 Edward Vartanessian</p>
-      <p class="footer-mono">no cookies, no trackers · deployed by CI · <a href="https://github.com/EddieV2/my-website" rel="noopener" target="_blank">view source</a></p>
+      <p class="footer-mono">no cookies, no third-party trackers · deployed by CI · <a href="https://github.com/EddieV2/my-website" rel="noopener" target="_blank">view source</a></p>
     </div>
   </footer>
 
