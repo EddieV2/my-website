@@ -153,11 +153,17 @@ resource "aws_cloudwatch_log_delivery" "cloudfront_to_s3" {
   delivery_destination_arn = aws_cloudwatch_log_delivery_destination.s3.arn
   record_fields            = local.log_fields
 
-  # Hive-style partitioning so Athena can prune by date instead of scanning
-  # every object -- this is what keeps query cost at effectively zero.
+  # CreateDelivery rejected two different custom suffix paths with an opaque
+  # "ValidationException: Provided suffixPath is invalid" -- both used static
+  # key= text with Hive mode on, and the API disagrees with the documented
+  # example. Rather than keep guessing at an undocumented grammar, this matches
+  # the configuration AWS publishes as valid in DescribeConfigurationTemplates:
+  #   "s3DeliveryConfiguration": { "suffixPath": "", "enableHiveCompatiblePath": false }
+  # CloudFront still writes a dated prefix of its own, and Athena reads it with
+  # partition projection, so nothing downstream depends on a custom layout.
   s3_delivery_configuration {
-    suffix_path                 = "/{DistributionId}/year={yyyy}/month={MM}/day={dd}"
-    enable_hive_compatible_path = true
+    suffix_path                 = ""
+    enable_hive_compatible_path = false
   }
 
   depends_on = [aws_s3_bucket_policy.logs_delivery]
