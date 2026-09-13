@@ -12,6 +12,23 @@ import os
 import time
 
 MAX_BODY = 1024
+
+# The beacon has always sent the page path; it was parsed and then dropped, so
+# "which page did they read" was unanswerable even though the data arrived
+# here. It becomes a dimension now — but only for paths that actually exist.
+# An unbounded dimension is a cost hazard rather than a privacy one: every
+# distinct value becomes its own billed CloudWatch series, and this site takes
+# scanner sweeps (1,966 requests in one hour, 63% of them 404s, 2026-09-12).
+# An allowlist caps the blast radius at these six plus "other".
+PAGES = frozenset({
+    "/",
+    "/observability.html",
+    "/404.html",
+    "/work/copywarden.html",
+    "/work/fleet-automation.html",
+    "/work/otel-collector.html",
+})
+
 BOUNDS = {  # metric: (min, max) — reject junk beacons
     "lcp": (0, 60_000),
     "cls": (0, 10),
@@ -58,13 +75,19 @@ def handler(event, _context):
     if not metrics:
         return {"statusCode": 400, "body": ""}
 
+    raw_path = data.get("path")
+    page = raw_path if isinstance(raw_path, str) and raw_path in PAGES else "other"
+
+    # Two dimension sets: the empty one keeps the existing fleet-wide series
+    # intact (the publisher and the SLO gate read those), and ["page"] adds the
+    # per-page breakdown that makes bounce rate measurable.
     emf = {
         "_aws": {
             "Timestamp": int(time.time() * 1000),
             "CloudWatchMetrics": [
                 {
                     "Namespace": "EvSite/RUM",
-                    "Dimensions": [[]],
+                    "Dimensions": [[], ["page"]],
                     "Metrics": [
                         {"Name": n.upper(), "Unit": "None" if n == "cls" else "Milliseconds"}
                         for n in metrics
@@ -72,6 +95,7 @@ def handler(event, _context):
                 }
             ],
         },
+        "page": page,
         "PageView": 1,
         **{n.upper(): v for n, v in metrics.items()},
     }

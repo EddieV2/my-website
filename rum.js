@@ -8,6 +8,20 @@
   if (navigator.doNotTrack === '1' || window.doNotTrack === '1') return;
   if (!('PerformanceObserver' in window) || !navigator.sendBeacon) return;
 
+  /* Own visits are noise, not data. Twelve page views in a fortnight, two of
+     them an automated browser, and no way to tell which -- so the owner marks
+     their own browser once and stops counting. ?owner=1 sets it, ?owner=0
+     clears it, and it lives only in this browser's localStorage: a boolean
+     about the person reading, never transmitted, identifying nobody.
+     navigator.webdriver catches headless browsers for the same reason. */
+  try {
+    var flag = new URLSearchParams(location.search).get('owner');
+    if (flag === '1') localStorage.setItem('ev-owner', '1');
+    else if (flag === '0') localStorage.removeItem('ev-owner');
+    if (localStorage.getItem('ev-owner') === '1') return;
+  } catch (e) { /* storage blocked: fall through and measure normally */ }
+  if (navigator.webdriver) return;
+
   var lcp = 0, cls = 0, inp = 0, sent = false;
 
   try {
